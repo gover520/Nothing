@@ -3,12 +3,11 @@
 
 
 import urllib
-import urllib2
 import json
 import sys
 import time
 import signal
-import commands
+import subprocess
 
 
 dnspod_username = '******@qq.com'
@@ -45,7 +44,7 @@ def url_read(url, postdata = None, method = None):
 		postdata = urllib.urlencode(postdata)
 
 	try:
-		req = urllib2.Request(url, data = postdata)
+		req = urllib.request(url, data = postdata)
 		req.add_header('User-Agent', 'DNSPOD International DDNS/1.1.0 (jenson.shixf@gmail.com)')
 		if not method is None:
 			req.get_method = lambda: method
@@ -66,7 +65,7 @@ def get_myip():
 	#myip = url_read('http://shixf.com/api/getip')
 	
 	cmd = ''' curl cip.cc 2>/dev/null '''
-	result = commands.getoutput(cmd)
+	result = subprocess.getoutput(cmd)
 
 	myip = result.split('www.cip.cc/')[1]
 
@@ -188,7 +187,7 @@ def dnspod_ddns():
 
 
 def _signal_handler(signal, frame):
-	print 'Exiting...'
+	print('Exiting...')
 	sys.exit(0)
 
 if __name__ == '__main__':
