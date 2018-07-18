@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
+import urllib
 from urllib import request, parse
 import json
 import sys
@@ -14,7 +14,7 @@ dnspod_username = '******@qq.com'
 dnspod_password = '******'
 dnspod_domains = [
 	{
-		'domain'		:	'ly.com',
+		'domain'		:	'outmai.cn',
 		'sub_domain'	:	['pi','@', '*']
 	}
 ]
@@ -44,11 +44,11 @@ def url_read(url, postdata = None, method = None):
 		postdata = urllib.parse.urlencode(postdata)
 
 	try:
-		req = urllib.request(url, data = postdata)
+		req = urllib.request.Request(url)
 		req.add_header('User-Agent', 'DNSPOD International DDNS/1.1.0 (jenson.shixf@gmail.com)')
 		if not method is None:
 			req.get_method = lambda: method
-		urlItem = urllib.request.urlopen(req, timeout = 10)
+		urlItem = urllib.request.urlopen(req, data = postdata.encode('utf-8'), timeout = 10)
 		result = urlItem.read()
 		urlItem.close()
 	except urllib.request.URLError as e:
@@ -68,7 +68,6 @@ def get_myip():
 	result = subprocess.getoutput(cmd)
 
 	myip = result.split('www.cip.cc/')[1]
-
 	if not myip is None:
 		global _dnspod_myip
 		if myip != _dnspod_myip:
