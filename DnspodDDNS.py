@@ -15,7 +15,8 @@ dnspod_password = '******'
 dnspod_domains = [
 	{
 		'domain'		:	'outmai.cn',
-		'sub_domain'	:	['pi','@', '*']
+		'sub_domain'	:	['pi','@', '*'],
+		'inet_domain'	:	['inet']
 	}
 ]
 dnspod_daemon = 300
@@ -23,6 +24,7 @@ dnspod_daemon = 300
 
 _dnspod_api = 'https://api.dnspod.com/'
 _dnspod_myip = '127.0.0.1'
+_dnspod_inetip = '127.0.0.1'
 _dnspod_token = None
 
 
@@ -64,10 +66,9 @@ def url_read(url, postdata = None, method = None):
 def get_myip():
 	#myip = url_read('http://shixf.com/api/getip')
 	
-	cmd = ''' curl cip.cc 2>/dev/null '''
-	result = subprocess.getoutput(cmd)
-
-	myip = result.split('www.cip.cc/')[1]
+	cmd = ''' curl ip.cip.cc '''
+	myip = subprocess.getoutput(cmd)
+	
 	if not myip is None:
 		global _dnspod_myip
 		if myip != _dnspod_myip:
@@ -75,6 +76,17 @@ def get_myip():
 			return _dnspod_myip
 	return None
 
+def get_inetip():
+	cmd = ''' ifconfig -a '''
+	result = subprocess.getoutput(cmd)
+
+	inetip = result.split('inet ')[1]
+	if not inetip is None:
+		global _dnspod_inetip
+		if inetip != _dnspod_inetip:
+			_dnspod_inetip = inetip
+			return _dnspod_inetip
+	return None
 
 def output_lasterror(error, message):
 	print('{0} : {1}'.format(error, message))
@@ -137,7 +149,7 @@ def dnspod_records(domain_id):
 	return None
 
 
-def dnspod_record_modify(domain, domain_id, record):
+def dnspod_record_modify(domain, domain_id, record, dnspod_ip):
 	postdata = {
 		'user_token'	:	_dnspod_token,
 		'domain_id'		:	domain_id,
@@ -145,7 +157,7 @@ def dnspod_record_modify(domain, domain_id, record):
 		'sub_domain'	:	record['name'],
 		'record_type'	:	record['type'],
 		'record_line'	:	'default',
-		'value'			:	_dnspod_myip,
+		'value'			:	dnspod_ip,
 		'ttl'			:	record['ttl'],
 		'format'		:	'json',
 	}
@@ -156,7 +168,7 @@ def dnspod_record_modify(domain, domain_id, record):
 		if '1' == modify_result['status']['code']:
 			output_lasterror('Success', 
 				'{0}.{1} has changed IP to {2}, {3}'.format(record['name'], domain['domain'], 
-					_dnspod_myip, modify_result['status']['message']))
+					dnspod_ip, modify_result['status']['message']))
 		else:
 			output_lasterror('DnspodErrorCode: {0}'.format(modify_result['status']['code']), 
 								modify_result['status']['message'])
@@ -171,14 +183,21 @@ def dnspod_checkrecords(domain, domain_id):
 			if record['name'] in domain['sub_domain']:
 				if record['type'] == 'A' or record['type'] == 'AAAA':
 					if record['value'] != _dnspod_myip:
-						dnspod_record_modify(domain, domain_id, record)
+						dnspod_record_modify(domain, domain_id, record, _dnspod_myip)
+					else:
+						output_lasterror('Success', 
+							'{0}.{1} IP is not change.'.format(record['name'], domain['domain']))
+			if record['name'] in domain['inet_domain']:
+				if record['type'] == 'A' or record['type'] == 'AAAA':
+					if record['value'] != _dnspod_inetip:
+						dnspod_record_modify(domain, domain_id, record, _dnspod_inetip)
 					else:
 						output_lasterror('Success', 
 							'{0}.{1} IP is not change.'.format(record['name'], domain['domain']))
 
 
 def dnspod_ddns():
-	if get_myip() and dnspod_login():
+	if (get_myip() or get_inetip()) and dnspod_login():
 		for domain in dnspod_domains:
 			domain_id = dnspod_domainid(domain['domain'])
 			if domain_id > 0:
