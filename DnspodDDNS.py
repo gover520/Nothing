@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-import urllib
+from urllib import request, parse
 import json
 import sys
 import time
@@ -41,19 +41,19 @@ def url_read(url, postdata = None, method = None):
 	result = None
 
 	if not postdata is None:
-		postdata = urllib.urlencode(postdata)
+		postdata = urllib.parse.urlencode(postdata)
 
 	try:
 		req = urllib.request(url, data = postdata)
 		req.add_header('User-Agent', 'DNSPOD International DDNS/1.1.0 (jenson.shixf@gmail.com)')
 		if not method is None:
 			req.get_method = lambda: method
-		urlItem = urllib2.urlopen(req, timeout = 10)
+		urlItem = urllib.request.urlopen(req, timeout = 10)
 		result = urlItem.read()
 		urlItem.close()
-	except urllib2.URLError as e:
+	except urllib.request.URLError as e:
 		output_lasterror('URLError', e.reason)
-	except urllib2.HTTPError as e:
+	except urllib.request.HTTPError as e:
 		output_lasterror('HTTPError', e.reason)
 	except:
 		output_lasterror('FetchError', 'HTTP data fetch error.')
