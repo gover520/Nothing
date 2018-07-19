@@ -66,13 +66,13 @@ def url_read(url, postdata = None, method = None):
 
 def get_myip():
 	cmd = ''' curl ip.cip.cc '''
-	myip = subprocess.getoutput(cmd)
-	
-	if not myip is None:
-		global _dnspod_myip
-		if myip != _dnspod_myip:
-			_dnspod_myip = myip
-			return _dnspod_myip
+	result = subprocess.getoutput(cmd)
+	ips = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", result)
+
+	global _dnspod_myip
+	if len(ips) > 0 and ips[0] != _dnspod_myip:
+		_dnspod_myip = ips[0]
+		return _dnspod_myip
 	return None
 
 def get_inetip():
@@ -81,8 +81,8 @@ def get_inetip():
 	ips = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", result)
 	
 	global _dnspod_inetip
-	if len(ips) > 0 and ips[1] != _dnspod_inetip:
-		_dnspod_inetip = ips[1]
+	if len(ips) > 0 and ips[0] != _dnspod_inetip:
+		_dnspod_inetip = ips[0]
 		return _dnspod_inetip
 	return None
 
