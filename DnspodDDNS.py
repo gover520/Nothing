@@ -8,10 +8,11 @@ import sys
 import time
 import signal
 import subprocess
+import re
 
 
-dnspod_username = '******@qq.com'
-dnspod_password = '******'
+dnspod_username = 'xxxxxx@qq.com'
+dnspod_password = 'xxxxxx'
 dnspod_domains = [
 	{
 		'domain'		:	'outmai.cn',
@@ -64,8 +65,6 @@ def url_read(url, postdata = None, method = None):
 
 
 def get_myip():
-	#myip = url_read('http://shixf.com/api/getip')
-	
 	cmd = ''' curl ip.cip.cc '''
 	myip = subprocess.getoutput(cmd)
 	
@@ -79,13 +78,12 @@ def get_myip():
 def get_inetip():
 	cmd = ''' ifconfig -a '''
 	result = subprocess.getoutput(cmd)
-
-	inetip = result.split('inet ')[1]
-	if not inetip is None:
-		global _dnspod_inetip
-		if inetip != _dnspod_inetip:
-			_dnspod_inetip = inetip
-			return _dnspod_inetip
+	ips = re.findall(r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", result)
+	
+	global _dnspod_inetip
+	if len(ips) > 0 and ips[1] != _dnspod_inetip:
+		_dnspod_inetip = ips[1]
+		return _dnspod_inetip
 	return None
 
 def output_lasterror(error, message):
@@ -197,7 +195,9 @@ def dnspod_checkrecords(domain, domain_id):
 
 
 def dnspod_ddns():
-	if (get_myip() or get_inetip()) and dnspod_login():
+	change = get_myip()
+	change = get_inetip() or change
+	if change and dnspod_login():
 		for domain in dnspod_domains:
 			domain_id = dnspod_domainid(domain['domain'])
 			if domain_id > 0:
